@@ -1,0 +1,132 @@
+
+`ifndef GAME_OVER
+`define GAME_OVER
+
+`include "hvsyncGenerator.v"
+
+/*
+ROM module with 5x5 bitmaps for the digits 0-9.
+
+digits10_case - Uses the case statement.
+digits10_array - Uses an array and initial block.
+
+These two modules are functionally equivalent.
+*/
+
+// module for 10-digit bitmap ROM
+
+module game_Over(digit, yofs, bits);
+  
+  input [3:0] digit;		// digit 0-9
+  input [2:0] yofs;		// vertical offset (0-4)
+  output [4:0] bits;		// output (5 bits)
+
+  reg [4:0] bitarray[0:15][0:4]; // ROM array (16 x 5 x 5 bits)
+
+  assign bits = bitarray[digit][yofs];	// assign module output
+  
+  integer i,j;
+  
+  initial begin/*{w:5,h:5,count:10}*/
+    bitarray[0][0] = 5'b11111; //G
+    bitarray[0][1] = 5'b10000;
+    bitarray[0][2] = 5'b10111;
+    bitarray[0][3] = 5'b10001;
+    bitarray[0][4] = 5'b11111;
+
+    bitarray[1][0] = 5'b01110; //A
+    bitarray[1][1] = 5'b10001;
+    bitarray[1][2] = 5'b11111;
+    bitarray[1][3] = 5'b10001;
+    bitarray[1][4] = 5'b10001;
+
+    bitarray[2][0] = 5'b11011; //M
+    bitarray[2][1] = 5'b11011;
+    bitarray[2][2] = 5'b11111;
+    bitarray[2][3] = 5'b10101;
+    bitarray[2][4] = 5'b10001;
+
+    bitarray[3][0] = 5'b11111; //E
+    bitarray[3][1] = 5'b10000;
+    bitarray[3][2] = 5'b11111;
+    bitarray[3][3] = 5'b10000;
+    bitarray[3][4] = 5'b11111;
+    
+    bitarray[4][0] = 5'b00000; 
+    bitarray[4][1] = 5'b00000;
+    bitarray[4][2] = 5'b00000;
+    bitarray[4][3] = 5'b00000;
+    bitarray[4][4] = 5'b00000;
+
+    bitarray[5][0] = 5'b11111; //O
+    bitarray[5][1] = 5'b10001;
+    bitarray[5][2] = 5'b10001;
+    bitarray[5][3] = 5'b10001;
+    bitarray[5][4] = 5'b11111;
+
+    bitarray[6][0] = 5'b10001; //V
+    bitarray[6][1] = 5'b10001;
+    bitarray[6][2] = 5'b10001;
+    bitarray[6][3] = 5'b11011;
+    bitarray[6][4] = 5'b01110;
+
+    bitarray[7][0] = 5'b11111; //E
+    bitarray[7][1] = 5'b10000;
+    bitarray[7][2] = 5'b11111;
+    bitarray[7][3] = 5'b10000;
+    bitarray[7][4] = 5'b11111;
+
+    bitarray[8][0] = 5'b11111; //R
+    bitarray[8][1] = 5'b10001;
+    bitarray[8][2] = 5'b11110;
+    bitarray[8][3] = 5'b10011;
+    bitarray[8][4] = 5'b10001;
+
+
+    // clear unused array entries
+    for (i = 9; i <= 15; i++)
+      for (j = 0; j <= 4; j++) 
+        bitarray[i][j] = 0; 
+  end
+endmodule
+
+// test module
+module test_words_top(clk, reset, hsync, vsync, rgb);
+  
+  input clk, reset;
+  output hsync, vsync;
+  output [2:0] rgb;
+
+  wire display_on;
+  wire [8:0] hpos;
+  wire [8:0] vpos;
+  
+  hvsync_Generator hvsync_gen(
+    .clk(clk),
+    .reset(reset),
+    .hsync(hsync),
+    .vsync(vsync),
+    .display_on(display_on),
+    .hpos(hpos),
+    .vpos(vpos)
+  );
+  
+  wire [3:0] go_digit = hpos[7:4];
+  wire [2:0] go_xofs = hpos[3:1] ;
+  wire [2:0] go_yofs = vpos[3:1];
+  wire [4:0] go_bits;
+  
+  game_Over numbers(
+    .digit(go_digit),
+    .yofs(go_yofs),
+    .bits(go_bits)
+  );
+
+  wire r = display_on && 0;
+  wire g = display_on && go_bits[go_xofs ^ 3'b111];
+  wire b = display_on && 0;
+  assign rgb = {b,g,r};
+
+endmodule
+
+`endif
